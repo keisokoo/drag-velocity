@@ -1,0 +1,59 @@
+body,
+html {
+  margin: 0;
+  background-color: #fff;
+  touch-action: none;
+  overflow: hidden;
+}
+.inactive {
+  width: 100%;
+  & > div {
+    background: linear-gradient(-45deg, #efefef, #9a9a9a, #fdfdfd, #929292);
+    background-size: 400% 400%;
+    animation: gradient 3s ease infinite;
+    color: transparent;
+    max-width: 300px;
+  }
+}
+#response {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+#animate {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 24px;
+  overflow-x: auto;
+  user-select: none;
+  & > div {
+    width: 140px;
+    height: 200px;
+    background-color: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 4px 4px 10px 0px rgba(89, 89, 89, 0.5);
+    font-size: 22px;
+  }
+  cursor: grab;
+  &:active {
+    cursor: grabbing;
+  }
+}

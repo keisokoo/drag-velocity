@@ -1,0 +1,27 @@
+doctype html
+html(lang="ko")
+  head 
+    block head
+      title title
+    meta(charset="utf-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    meta(property="og:title" content='title')
+    meta(name="description" content="")
+    meta(property="og:type" content="")
+    meta(property="og:url" content="")
+    meta(property="og:image" content="")
+    meta(name="theme-color" content="#fafafa")
+    link(rel="apple-touch-icon" href=require("../images/icon.png"))
+    block styles
+    link(rel="stylesheet" href="/sources/normalize.css")
+    link(rel="stylesheet" href=require("../sass/style.scss"))
+    block head-script
+  body
+    #app
+      block contents
+    block footer
+    script(src="/sources/modernizr-3.11.2.min.js")
+    script(src="/assets/js/main.js")
+    if isDev
+      script(src=require("../scripts/dummy.ts"))
+    block page-script
