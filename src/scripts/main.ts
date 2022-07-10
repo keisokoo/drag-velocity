@@ -1,4 +1,4 @@
-class DragWithAccelerator {
+class DragWithVelocity {
   dragged: boolean = false
   draggable: boolean = false
   target: any
@@ -28,11 +28,34 @@ class DragWithAccelerator {
   movedX: number = 0
 
   maxFinalMoveX: number = 100
-  type: "in" | "out" = "out"
+  easingType: "in" | "out" = "out"
   movementX: number = 0
   lastVelocityX: number = 0
-  constructor(target: any) {
+
+  useAccelerator: boolean = true
+
+  acceleratorShift: number = 1
+  constructor(
+    target: any,
+    configs?: {
+      maxFinalMoveX?: number
+      useAccelerator?: boolean
+      easingType?: "in" | "out"
+      acceleratorShift?: number
+    }
+  ) {
     this.target = target
+    if (configs) {
+      if (configs.acceleratorShift)
+        this.acceleratorShift = configs.acceleratorShift
+      if (configs.maxFinalMoveX) this.maxFinalMoveX = configs.maxFinalMoveX
+      if (configs.easingType) this.easingType = configs.easingType
+      if (typeof configs.useAccelerator === "boolean")
+        this.useAccelerator = configs.useAccelerator
+    }
+  }
+  easeOutCubic = (x: number): number => {
+    return 1 - Math.pow(1 - x, 3)
   }
   capSpeed = (value: number) => {
     let res = 0
@@ -45,17 +68,21 @@ class DragWithAccelerator {
   }
   velocityAction = () => {
     cancelAnimationFrame(this.updateFrame)
-    if (this.type === "in") {
+    if (this.easingType === "in") {
       this.currentPositionX =
         this.previousPositionX + this.lastVelocityX - this.velocityX
+    }
+    if (this.easingType === "out") {
+      // https://easings.net/
+      // let easingPer = this.easeOutCubic(this.velocityX / this.lastVelocityX)
+      // let easingValue = this.lastVelocityX * easingPer
+      this.currentPositionX = this.currentPositionX + this.velocityX
     }
     this.target.style.transform = `translateX(${this.currentPositionX + "px"})`
     this.velocityX = this.velocityX * 0.92
     this.velocityX = Math.round(this.velocityX * 10) / 10
     this.velocityX = this.capSpeed(this.velocityX)
-    if (this.type === "out") {
-      this.currentPositionX = this.currentPositionX + this.velocityX
-    }
+
     if (Math.floor(Math.abs(this.velocityX)) !== 0) {
       this.animationFrame = requestAnimationFrame(this.velocityAction)
     } else {
@@ -117,24 +144,30 @@ class DragWithAccelerator {
   handleUp = (e: MouseEvent) => {
     this.draggable = false
     this.previousPositionX = this.currentPositionX
-    let average = 0
+    let averageSpeed = 0
     let lastDirection = "center"
     const collectFrom = new Date(Date.now() - 500)
-    if (this.speedList.length > 0) {
+    if (this.speedList.length > 0 && this.useAccelerator) {
       lastDirection = this.speedList[this.speedList.length - 1].direction
       const filteredSpeed = this.speedList
         .filter((item) => collectFrom < new Date(item.timestamp))
         .filter((item) => item.direction === lastDirection)
-      average = Number(
+      let average = Number(
         (
           filteredSpeed.reduce((total, curr) => {
             return (total += curr.speed)
           }, 0) / filteredSpeed.length
         ).toFixed(2)
       )
+      averageSpeed = isNaN(average)
+        ? 0
+        : average < 0
+        ? average - 1
+        : average + 1
+    } else {
+      averageSpeed = 1
     }
-
-    this.velocityX = (isNaN(average) ? 0 : average) * this.movementX
+    this.velocityX = averageSpeed * this.movementX * this.acceleratorShift
     this.velocityX =
       this.capSpeed(this.velocityX) * (lastDirection === "left" ? -1 : 1)
     this.lastVelocityX = this.velocityX
@@ -156,7 +189,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
   createDiv()
-  const { handleDown, handleMove, handleUp } = new DragWithAccelerator(wrap)
+  const { handleDown, handleMove, handleUp } = new DragWithVelocity(wrap, {
+    acceleratorShift: 0.7,
+  })
   window.addEventListener("mousedown", handleDown)
   window.addEventListener("mousemove", handleMove)
   window.addEventListener("mouseup", handleUp)
