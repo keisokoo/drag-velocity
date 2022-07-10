@@ -27,8 +27,8 @@ class DragWithAccelerator {
 
   movedX: number = 0
 
-  maxFinalMoveX: number = 500
-
+  maxFinalMoveX: number = 100
+  type: "in" | "out" = "out"
   movementX: number = 0
   lastVelocityX: number = 0
   constructor(target: any) {
@@ -44,28 +44,33 @@ class DragWithAccelerator {
     return value
   }
   velocityAction = () => {
-    this.currentPositionX =
-      this.previousPositionX + this.lastVelocityX - this.velocityX
+    cancelAnimationFrame(this.updateFrame)
+    if (this.type === "in") {
+      this.currentPositionX =
+        this.previousPositionX + this.lastVelocityX - this.velocityX
+    }
     this.target.style.transform = `translateX(${this.currentPositionX + "px"})`
     this.velocityX = this.velocityX * 0.92
     this.velocityX = Math.round(this.velocityX * 10) / 10
     this.velocityX = this.capSpeed(this.velocityX)
+    if (this.type === "out") {
+      this.currentPositionX = this.currentPositionX + this.velocityX
+    }
     if (Math.floor(Math.abs(this.velocityX)) !== 0) {
       this.animationFrame = requestAnimationFrame(this.velocityAction)
     } else {
       cancelAnimationFrame(this.animationFrame)
     }
   }
-  update = (timer: number) => {
+  update = () => {
     this.redundantCall = true
     this.pendingX =
       this.pendingX +
       (this.currentPositionX - this.pendingX) * this.acceleration
-
+    this.target.style.transform = `translateX(${this.pendingX + "px"})`
     if (Math.abs(this.currentPositionX - this.pendingX) < 1) {
       cancelAnimationFrame(this.updateFrame)
     } else {
-      this.target.style.transform = `translateX(${this.pendingX + "px"})`
       this.updateFrame = requestAnimationFrame(this.update)
     }
   }
@@ -105,13 +110,11 @@ class DragWithAccelerator {
 
       if (this.redundantCall) {
         this.redundantCall = false
-
         requestAnimationFrame(this.update)
       }
     }
   }
   handleUp = (e: MouseEvent) => {
-    cancelAnimationFrame(this.updateFrame)
     this.draggable = false
     this.previousPositionX = this.currentPositionX
     let average = 0
@@ -131,7 +134,7 @@ class DragWithAccelerator {
       )
     }
 
-    this.velocityX = (average ?? 1) * this.movementX
+    this.velocityX = (isNaN(average) ? 0 : average) * this.movementX
     this.velocityX =
       this.capSpeed(this.velocityX) * (lastDirection === "left" ? -1 : 1)
     this.lastVelocityX = this.velocityX
